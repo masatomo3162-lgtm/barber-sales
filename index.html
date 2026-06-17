@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#3266ad">
+<meta name="theme-color" content="#185fa5">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="売上管理">
@@ -14,327 +14,475 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a18}
-.app{max-width:720px;margin:0 auto;min-height:100vh;background:#fff;position:relative}
+.app{max-width:720px;margin:0 auto;min-height:100vh;background:#fff}
+
+/* PIN画面 */
+#pin-screen{position:fixed;inset:0;background:#185fa5;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;gap:24px}
+#pin-screen h1{color:#fff;font-size:22px;font-weight:500}
+#pin-screen .pin-dots{display:flex;gap:16px}
+#pin-screen .dot{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.6);background:transparent;transition:background .15s}
+#pin-screen .dot.filled{background:#fff;border-color:#fff}
+#pin-screen .keypad{display:grid;grid-template-columns:repeat(3,72px);gap:12px}
+#pin-screen .key{height:72px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.1);color:#fff;font-size:24px;font-weight:400;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .1s;-webkit-tap-highlight-color:transparent}
+#pin-screen .key:active{background:rgba(255,255,255,0.3)}
+#pin-screen .key.del{font-size:18px}
+#pin-screen .err{color:rgba(255,255,255,0.9);font-size:14px;min-height:20px}
+#pin-screen .setup-note{color:rgba(255,255,255,0.8);font-size:13px;text-align:center;max-width:260px;line-height:1.6}
 
 /* ヘッダー */
-.header{background:#3266ad;color:#fff;padding:14px 16px 10px;position:sticky;top:0;z-index:100}
-.header h1{font-size:17px;font-weight:600;letter-spacing:0.02em}
+.header{background:#185fa5;color:#fff;padding:14px 16px 10px;position:sticky;top:0;z-index:99}
+.header h1{font-size:17px;font-weight:600}
 .header .sub{font-size:12px;opacity:0.8;margin-top:2px}
 
 /* タブ */
-.tabs{display:flex;border-bottom:1px solid #e8e8e3;background:#fff;position:sticky;top:52px;z-index:99}
-.tab{flex:1;padding:11px 4px;font-size:13px;cursor:pointer;border:none;background:none;color:#888780;border-bottom:2px solid transparent;transition:all 0.15s}
-.tab.active{color:#3266ad;font-weight:600;border-bottom-color:#3266ad}
+.tabs{display:flex;border-bottom:1px solid #e8e8e3;background:#fff;position:sticky;top:52px;z-index:98}
+.tab{flex:1;padding:11px 4px;font-size:13px;cursor:pointer;border:none;background:none;color:#888;border-bottom:2px solid transparent;transition:all .15s}
+.tab.active{color:#185fa5;font-weight:600;border-bottom-color:#185fa5}
 
-/* セクション */
 .section{display:none;padding:16px}.section.active{display:block}
-
-/* カード */
 .card{background:#fff;border:1px solid #e8e8e3;border-radius:12px;padding:16px;margin-bottom:14px}
-.card-title{font-size:13px;font-weight:600;color:#888;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.05em}
+.card-title{font-size:12px;font-weight:600;color:#888;margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em}
 
 /* メトリクス */
-.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-.metric{background:#f5f5f0;border-radius:10px;padding:12px 10px}
-.metric .lbl{font-size:11px;color:#888;margin-bottom:4px}
-.metric .val{font-size:18px;font-weight:700;color:#1a1a18}
-.metric .val.cash{color:#185fa5}
-.metric .val.cl{color:#3b6d11}
-.metric .sub{font-size:10px;color:#aaa;margin-top:2px}
+.mg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.m{background:#f5f5f0;border-radius:10px;padding:11px 10px}
+.m .l{font-size:11px;color:#888;margin-bottom:3px}
+.m .v{font-size:17px;font-weight:700;color:#1a1a18}
+.m .s{font-size:10px;color:#aaa;margin-top:2px}
 
 /* フォーム */
-.form-group{margin-bottom:14px}
-.form-group label{font-size:13px;font-weight:500;color:#555;display:block;margin-bottom:6px}
-.form-group input{width:100%;padding:11px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;background:#fff;color:#1a1a18;transition:border 0.15s}
-.form-group input:focus{outline:none;border-color:#3266ad}
+.fg{margin-bottom:12px}
+.fg label{font-size:13px;font-weight:500;color:#555;display:block;margin-bottom:5px}
+.fg input{width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;background:#fff;color:#1a1a18;transition:border .15s}
+.fg input:focus{outline:none;border-color:#185fa5}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sec-label{font-size:12px;font-weight:600;color:#888;margin:14px 0 8px;padding-bottom:4px;border-bottom:1px solid #eee;text-transform:uppercase;letter-spacing:.04em}
+.cnt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.cnt-item{display:flex;flex-direction:column;gap:4px}
+.cnt-item label{font-size:11px;color:#666;font-weight:500}
+.cnt-item input{padding:8px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;background:#fff;color:#0000cc;text-align:center}
+.cnt-item input:focus{outline:none;border-color:#185fa5}
 
 /* ボタン */
-.btn{padding:11px 20px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;border:1.5px solid #ddd;background:#fff;color:#1a1a18;transition:all 0.15s}
+.btn{padding:10px 18px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;border:1.5px solid #ddd;background:#fff;color:#1a1a18;transition:all .15s}
 .btn:hover{background:#f5f5f0}
-.btn-primary{background:#3266ad;color:#fff;border-color:#3266ad;width:100%}
-.btn-primary:hover{background:#2555a0}
-
-/* メッセージ */
-.msg{font-size:13px;padding:10px 12px;border-radius:8px;margin-top:10px;display:none}
+.btn-p{background:#185fa5;color:#fff;border-color:#185fa5;width:100%}
+.btn-p:hover{background:#0c447c}
+.btn-csv{font-size:12px;padding:7px 14px;color:#185fa5;border-color:#b5d4f4;background:#e6f1fb}
+.btn-imp{font-size:12px;padding:7px 14px;color:#3b6d11;border-color:#c0dd97;background:#eaf3de}
+.btn-danger{font-size:12px;padding:7px 14px;color:#a32d2d;border-color:#f7c1c1;background:#fcebeb}
+.msg{font-size:13px;padding:9px 12px;border-radius:8px;margin-top:10px;display:none}
 .msg.ok{background:#eaf3de;color:#3b6d11}
 .msg.err{background:#fcebeb;color:#a32d2d}
 
 /* テーブル */
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{font-size:11px;font-weight:600;color:#888;text-align:left;padding:7px 8px;border-bottom:1px solid #e8e8e3;background:#fafaf8}
-td{padding:8px 8px;border-bottom:1px solid #f0f0ec;color:#1a1a18;vertical-align:middle}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+th{font-size:11px;font-weight:600;color:#888;text-align:left;padding:6px 6px;border-bottom:1px solid #eee;background:#fafaf8}
+td{padding:7px 6px;border-bottom:1px solid #f0f0ec;color:#1a1a18;vertical-align:middle}
 tr:last-child td{border-bottom:none}
-.num{text-align:right}
-.total{font-weight:600}
-
-/* 曜日バッジ */
-.day-badge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700}
+.nr{text-align:right}.nc{text-align:center}.fw{font-weight:600}
+.db{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:700}
 .d0,.d6{background:#FAECE7;color:#993C1D}
 .d1,.d2,.d3,.d4,.d5{background:#E6F1FB;color:#185fa5}
-
-/* 週ヘッダー */
-.week-header td{background:#f5f5f0;font-size:12px;font-weight:600;color:#555;padding:6px 8px}
-
-/* セレクト */
-select{padding:8px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;background:#fff;color:#1a1a18;cursor:pointer}
-select:focus{outline:none;border-color:#3266ad}
-
-.select-row{display:flex;gap:8px;margin-bottom:14px;align-items:center}
-
-/* グラフボタン */
-.chart-btns{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
-.chart-btns .btn{font-size:12px;padding:7px 14px;border-radius:8px}
-.chart-btns .btn.active{background:#3266ad;color:#fff;border-color:#3266ad}
-
-/* 削除ボタン */
-.del-btn{font-size:11px;padding:3px 8px;border-radius:6px;cursor:pointer;border:1px solid #ddd;background:none;color:#aaa}
+.wh{background:#f5f5f0;font-size:11px;font-weight:600;color:#555}
+select{padding:8px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;background:#fff;color:#1a1a18}
+select:focus{outline:none;border-color:#185fa5}
+.sel-row{display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.empty{text-align:center;padding:28px;color:#aaa;font-size:13px}
+.del-btn{font-size:11px;padding:2px 7px;border-radius:6px;cursor:pointer;border:1px solid #ddd;background:none;color:#aaa}
 .del-btn:hover{color:#a32d2d;border-color:#a32d2d;background:#fcebeb}
 
-/* 空 */
-.empty{text-align:center;padding:32px 16px;color:#aaa;font-size:13px}
-
 /* グラフ */
-.chart-wrap{position:relative;width:100%;height:260px;margin-top:8px}
-.legend{display:flex;gap:14px;font-size:12px;color:#888;margin-bottom:6px;flex-wrap:wrap}
-.legend span{display:flex;align-items:center;gap:4px}
-.legend-sq{width:10px;height:10px;border-radius:2px;display:inline-block}
+.chart-wrap{position:relative;width:100%;height:250px;margin-top:8px}
+.leg{display:flex;gap:12px;font-size:11px;color:#888;margin-bottom:6px;flex-wrap:wrap}
+.leg span{display:flex;align-items:center;gap:4px}
+.leg-sq{width:10px;height:10px;border-radius:2px;display:inline-block}
+.chart-btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.chart-btns .btn{font-size:12px;padding:6px 12px}
+.chart-btns .btn.act{background:#185fa5;color:#fff;border-color:#185fa5}
 
-/* エクスポート */
-.export-btn{font-size:12px;padding:7px 14px;color:#185fa5;border-color:#b5d4f4;background:#e6f1fb}
-.export-btn:hover{background:#b5d4f4}
+/* 設定 */
+.settings-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0ec}
+.settings-item:last-child{border-bottom:none}
+.settings-item .si-label{font-size:14px;color:#1a1a18}
+.settings-item .si-sub{font-size:12px;color:#aaa;margin-top:2px}
 
 @media(max-width:400px){
-  .metric-grid{grid-template-columns:repeat(2,1fr)}
-  .metric .val{font-size:16px}
+  .mg{grid-template-columns:repeat(2,1fr)}
+  .cnt-grid{grid-template-columns:repeat(2,1fr)}
 }
 </style>
 </head>
 <body>
-<div class="app">
 
-<div class="header">
+<!-- PIN画面 -->
+<div id="pin-screen">
   <h1>✂ 売上管理</h1>
-  <div class="sub" id="header-date"></div>
+  <div class="pin-dots" id="pin-dots">
+    <div class="dot" id="d0"></div>
+    <div class="dot" id="d1"></div>
+    <div class="dot" id="d2"></div>
+    <div class="dot" id="d3"></div>
+  </div>
+  <div class="err" id="pin-err"></div>
+  <div class="keypad" id="keypad">
+    <button class="key" onclick="pinKey('1')">1</button>
+    <button class="key" onclick="pinKey('2')">2</button>
+    <button class="key" onclick="pinKey('3')">3</button>
+    <button class="key" onclick="pinKey('4')">4</button>
+    <button class="key" onclick="pinKey('5')">5</button>
+    <button class="key" onclick="pinKey('6')">6</button>
+    <button class="key" onclick="pinKey('7')">7</button>
+    <button class="key" onclick="pinKey('8')">8</button>
+    <button class="key" onclick="pinKey('9')">9</button>
+    <button class="key" style="visibility:hidden"></button>
+    <button class="key" onclick="pinKey('0')">0</button>
+    <button class="key del" onclick="pinDel()">⌫</button>
+  </div>
+  <div class="setup-note" id="pin-note"></div>
 </div>
 
-<div class="tabs">
-  <button class="tab active" onclick="switchTab('input')">✏ 入力</button>
-  <button class="tab" onclick="switchTab('list')">📋 一覧</button>
-  <button class="tab" onclick="switchTab('summary')">📊 集計</button>
+<div class="app" id="main-app" style="display:none">
+  <div class="header">
+    <h1>✂ 売上管理</h1>
+    <div class="sub" id="header-date"></div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="sw('input')">入力</button>
+    <button class="tab" onclick="sw('list')">一覧</button>
+    <button class="tab" onclick="sw('summary')">集計</button>
+    <button class="tab" onclick="sw('settings')">設定</button>
+  </div>
+
+  <!-- 入力 -->
+  <div id="sec-input" class="section active">
+    <div class="card">
+      <div class="card-title">売上入力</div>
+      <div class="row2">
+        <div class="fg"><label>日付</label><input type="date" id="inp-date"></div>
+      </div>
+      <div class="sec-label">売上</div>
+      <div class="row2">
+        <div class="fg"><label>現金（円）</label><input type="number" id="inp-cash" placeholder="0" min="0" inputmode="numeric"></div>
+        <div class="fg"><label>キャッシュレス（円）</label><input type="number" id="inp-cl" placeholder="0" min="0" inputmode="numeric"></div>
+      </div>
+      <div class="sec-label">客層（人数）</div>
+      <div class="cnt-grid">
+        <div class="cnt-item"><label>男性</label><input type="number" id="c-male" placeholder="0" min="0" inputmode="numeric"></div>
+        <div class="cnt-item"><label>女性</label><input type="number" id="c-female" placeholder="0" min="0" inputmode="numeric"></div>
+        <div class="cnt-item"><label>小学生</label><input type="number" id="c-elem" placeholder="0" min="0" inputmode="numeric"></div>
+        <div class="cnt-item"><label>中学生</label><input type="number" id="c-mid" placeholder="0" min="0" inputmode="numeric"></div>
+        <div class="cnt-item"><label>高校生</label><input type="number" id="c-high" placeholder="0" min="0" inputmode="numeric"></div>
+      </div>
+      <div class="sec-label">メニュー（人数）</div>
+      <div class="cnt-grid">
+        <div class="cnt-item"><label>パーマ</label><input type="number" id="c-perm" placeholder="0" min="0" inputmode="numeric"></div>
+        <div class="cnt-item"><label>カラーリング</label><input type="number" id="c-color" placeholder="0" min="0" inputmode="numeric"></div>
+      </div>
+      <button class="btn btn-p" onclick="saveEntry()" style="margin-top:6px">登録する</button>
+      <div class="msg" id="msg"></div>
+    </div>
+    <div id="today-box" style="display:none">
+      <div class="mg" id="today-cards"></div>
+    </div>
+  </div>
+
+  <!-- 一覧 -->
+  <div id="sec-list" class="section">
+    <div class="sel-row">
+      <select id="list-month" onchange="renderList()"></select>
+      <button class="btn btn-csv" onclick="exportCSV()">CSV出力</button>
+      <span style="font-size:12px;color:#aaa" id="list-count"></span>
+    </div>
+    <div id="list-body"></div>
+  </div>
+
+  <!-- 集計 -->
+  <div id="sec-summary" class="section">
+    <div class="sel-row">
+      <select id="sum-month" onchange="renderSum()"></select>
+    </div>
+    <div class="mg" id="sum-cards"></div>
+    <div class="card">
+      <div class="card-title">客層集計</div>
+      <div id="guest-sum"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">曜日別集計</div>
+      <table><thead><tr><th>曜</th><th class="nr">売上合計</th><th class="nr">客数</th><th class="nr">客単価</th><th class="nr">P</th><th class="nr">C</th></tr></thead>
+      <tbody id="day-sum"></tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-title">週別集計</div>
+      <table><thead><tr><th>週</th><th class="nr">売上合計</th><th class="nr">客数</th><th class="nr">1日平均</th></tr></thead>
+      <tbody id="week-sum"></tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-title">グラフ</div>
+      <div class="leg" id="chart-leg"></div>
+      <div class="chart-wrap"><canvas id="chart" role="img" aria-label="売上グラフ"></canvas></div>
+      <div class="chart-btns">
+        <button class="btn act" onclick="setChart('sales',this)">売上</button>
+        <button class="btn" onclick="setChart('guests',this)">客数</button>
+        <button class="btn" onclick="setChart('dow',this)">曜日別</button>
+        <button class="btn" onclick="setChart('menu',this)">メニュー</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 設定 -->
+  <div id="sec-settings" class="section">
+    <div class="card">
+      <div class="card-title">データ管理</div>
+      <div class="settings-item">
+        <div><div class="si-label">CSVインポート</div><div class="si-sub">以前エクスポートしたCSVを読み込む</div></div>
+        <label class="btn btn-imp" style="cursor:pointer">ファイル選択<input type="file" accept=".csv" id="csv-import" style="display:none" onchange="importCSV(this)"></label>
+      </div>
+      <div class="settings-item">
+        <div><div class="si-label">全データエクスポート</div><div class="si-sub">全期間のデータをCSVで出力</div></div>
+        <button class="btn btn-csv" onclick="exportAllCSV()">全期間CSV</button>
+      </div>
+      <div class="settings-item">
+        <div><div class="si-label">全データ削除</div><div class="si-sub">すべての売上データを消去する</div></div>
+        <button class="btn btn-danger" onclick="deleteAll()">全削除</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">PINコード</div>
+      <div class="settings-item">
+        <div><div class="si-label">PINコードを変更</div><div class="si-sub" id="pin-status"></div></div>
+        <button class="btn" onclick="changePIN()">変更</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">アプリについて</div>
+      <div class="settings-item">
+        <div><div class="si-label">床屋 売上管理</div><div class="si-sub">ver 2.0 — データはこのデバイスに保存されます</div></div>
+      </div>
+    </div>
+  </div>
 </div>
-
-<!-- 入力 -->
-<div id="sec-input" class="section active">
-  <div class="card">
-    <div class="card-title">売上入力</div>
-    <div class="form-group">
-      <label>日付</label>
-      <input type="date" id="inp-date">
-    </div>
-    <div class="form-group">
-      <label>現金 (円)</label>
-      <input type="number" id="inp-cash" placeholder="0" min="0" inputmode="numeric">
-    </div>
-    <div class="form-group">
-      <label>キャッシュレス (円)</label>
-      <input type="number" id="inp-cl" placeholder="0" min="0" inputmode="numeric">
-    </div>
-    <button class="btn btn-primary" onclick="saveEntry()">登録する</button>
-    <div class="msg" id="msg"></div>
-  </div>
-
-  <div id="today-box" style="display:none">
-    <div class="metric-grid" id="today-cards"></div>
-  </div>
-</div>
-
-<!-- 一覧 -->
-<div id="sec-list" class="section">
-  <div class="select-row">
-    <select id="list-month" onchange="renderList()"></select>
-    <button class="btn export-btn" onclick="exportCSV()">CSV出力</button>
-    <span style="font-size:12px;color:#aaa" id="list-count"></span>
-  </div>
-  <div id="list-body"></div>
-</div>
-
-<!-- 集計 -->
-<div id="sec-summary" class="section">
-  <div class="select-row">
-    <select id="sum-month" onchange="renderSummary()"></select>
-  </div>
-
-  <div class="metric-grid" id="sum-month-cards"></div>
-
-  <div class="card">
-    <div class="card-title">曜日別集計</div>
-    <table>
-      <thead><tr><th>曜</th><th class="num">現金合計</th><th class="num">CL合計</th><th class="num">売上合計</th><th class="num">平均</th><th class="num">日数</th></tr></thead>
-      <tbody id="day-summary"></tbody>
-    </table>
-  </div>
-
-  <div class="card">
-    <div class="card-title">週別集計</div>
-    <table>
-      <thead><tr><th>週</th><th class="num">現金合計</th><th class="num">CL合計</th><th class="num">売上合計</th><th class="num">1日平均</th></tr></thead>
-      <tbody id="week-summary"></tbody>
-    </table>
-  </div>
-
-  <div class="card">
-    <div class="card-title">グラフ</div>
-    <div class="legend">
-      <span><span class="legend-sq" style="background:#3266ad"></span>現金</span>
-      <span><span class="legend-sq" style="background:#639922"></span>キャッシュレス</span>
-    </div>
-    <div class="chart-wrap"><canvas id="bar-chart" role="img" aria-label="売上棒グラフ"></canvas></div>
-    <div class="chart-btns">
-      <button class="btn active" onclick="setChart('daily',this)">日別</button>
-      <button class="btn" onclick="setChart('weekly',this)">週別</button>
-      <button class="btn" onclick="setChart('dayofweek',this)">曜日別</button>
-    </div>
-  </div>
-</div>
-
-</div><!-- /app -->
 
 <script>
 const DAYS=['日','月','火','水','木','金','土'];
-const KEY='barber_sales_v2';
-let chart=null,chartMode='daily';
+const KEY='barber_v3';
+const PIN_KEY='barber_pin';
+let myChart=null,chartMode='sales';
+let pinBuf='',pinMode='verify',pinStep=1,pinFirst='';
 
+// ── PIN ─────────────────────────────────────────────
+function getPin(){return localStorage.getItem(PIN_KEY)||''}
+function savePin(p){localStorage.setItem(PIN_KEY,p)}
+
+function initPin(){
+  const pin=getPin();
+  const note=document.getElementById('pin-note');
+  if(!pin){
+    pinMode='setup';pinStep=1;
+    note.textContent='初回設定：4桁のPINを入力してください';
+    document.querySelector('#pin-screen h1').textContent='PINを設定';
+  }else{
+    pinMode='verify';
+    note.textContent='';
+  }
+  updatePinStatus();
+}
+
+function pinKey(k){
+  if(pinBuf.length>=4)return;
+  pinBuf+=k;
+  updateDots();
+  if(pinBuf.length===4)setTimeout(handlePin,120);
+}
+function pinDel(){if(pinBuf.length>0){pinBuf=pinBuf.slice(0,-1);updateDots()}}
+function updateDots(){
+  for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('filled',i<pinBuf.length);
+}
+
+function handlePin(){
+  const err=document.getElementById('pin-err');
+  if(pinMode==='verify'){
+    if(pinBuf===getPin()){
+      document.getElementById('pin-screen').style.display='none';
+      document.getElementById('main-app').style.display='block';
+      initApp();
+    }else{
+      err.textContent='PINが違います';
+      pinBuf='';updateDots();
+      setTimeout(()=>err.textContent='',1500);
+    }
+  }else if(pinMode==='setup'){
+    if(pinStep===1){
+      pinFirst=pinBuf;pinBuf='';updateDots();
+      document.getElementById('pin-note').textContent='もう一度入力してください（確認）';
+      pinStep=2;
+    }else{
+      if(pinBuf===pinFirst){
+        savePin(pinBuf);
+        pinBuf='';updateDots();
+        document.getElementById('pin-screen').style.display='none';
+        document.getElementById('main-app').style.display='block';
+        initApp();
+      }else{
+        err.textContent='一致しません。最初からやり直してください';
+        pinBuf='';pinFirst='';pinStep=1;updateDots();
+        document.getElementById('pin-note').textContent='4桁のPINを入力してください';
+        setTimeout(()=>err.textContent='',2000);
+      }
+    }
+  }else if(pinMode==='change'){
+    if(pinStep===1){
+      if(pinBuf!==getPin()){
+        err.textContent='現在のPINが違います';
+        pinBuf='';updateDots();
+        setTimeout(()=>err.textContent='',1500);
+        return;
+      }
+      pinStep=2;pinBuf='';updateDots();
+      document.getElementById('pin-note').textContent='新しいPINを入力してください';
+    }else if(pinStep===2){
+      pinFirst=pinBuf;pinBuf='';updateDots();
+      document.getElementById('pin-note').textContent='新しいPINをもう一度入力してください';
+      pinStep=3;
+    }else{
+      if(pinBuf===pinFirst){
+        savePin(pinBuf);
+        pinBuf='';updateDots();
+        document.getElementById('pin-screen').style.display='none';
+        document.getElementById('main-app').style.display='block';
+        updatePinStatus();
+        alert('PINを変更しました');
+      }else{
+        err.textContent='一致しません。もう一度';
+        pinBuf='';pinFirst='';pinStep=2;updateDots();
+        document.getElementById('pin-note').textContent='新しいPINを入力してください';
+        setTimeout(()=>err.textContent='',2000);
+      }
+    }
+  }
+}
+
+function changePIN(){
+  pinMode='change';pinStep=1;pinBuf='';pinFirst='';
+  updateDots();
+  document.querySelector('#pin-screen h1').textContent='PIN変更';
+  document.getElementById('pin-note').textContent='現在のPINを入力してください';
+  document.getElementById('pin-err').textContent='';
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('pin-screen').style.display='flex';
+}
+
+function updatePinStatus(){
+  const el=document.getElementById('pin-status');
+  if(el)el.textContent=getPin()?'設定済み':'未設定';
+}
+
+// ── データ ──────────────────────────────────────────
 function load(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
-function save(d){localStorage.setItem(KEY,JSON.stringify(d))}
+function persist(d){localStorage.setItem(KEY,JSON.stringify(d))}
 function fmt(n){return Math.round(n).toLocaleString('ja-JP')}
 function toYM(s){return s.slice(0,7)}
-function dayIdx(s){return new Date(s+'T00:00:00').getDay()}
-function weekNum(s){
-  const d=new Date(s+'T00:00:00');
-  const first=new Date(d.getFullYear(),d.getMonth(),1);
-  return Math.floor((d.getDate()+first.getDay()-1)/7)+1;
-}
+function di(s){return new Date(s+'T00:00:00').getDay()}
+function wn(s){const d=new Date(s+'T00:00:00'),f=new Date(d.getFullYear(),d.getMonth(),1);return Math.floor((d.getDate()+f.getDay()-1)/7)+1}
+function ints(id){return parseInt(document.getElementById(id).value)||0}
 
-// ヘッダー日付
-(function(){
-  const d=new Date();
-  const wd=['日','月','火','水','木','金','土'];
-  document.getElementById('header-date').textContent=
-    `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${wd[d.getDay()]}）`;
-  document.getElementById('inp-date').value=
-    `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-})();
-
-function getMonths(data){
+function months(data){
   const s=new Set(data.map(r=>toYM(r.date)));
-  const now=new Date();
-  const cur=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  s.add(cur);
-  return [...s].sort().reverse();
+  const now=new Date(),cur=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  s.add(cur);return [...s].sort().reverse();
 }
 
-function populateMonthSelects(){
-  const data=load();
-  const months=getMonths(data);
+function fillSelects(){
+  const data=load(),ms=months(data);
   ['list-month','sum-month'].forEach(id=>{
-    const sel=document.getElementById(id);
-    const prev=sel.value;
+    const sel=document.getElementById(id),prev=sel.value;
     sel.innerHTML='';
-    months.forEach(m=>{
-      const [y,mo]=m.split('-');
-      const o=document.createElement('option');
-      o.value=m;o.textContent=`${y}年${parseInt(mo)}月`;
-      sel.appendChild(o);
-    });
-    if(prev&&months.includes(prev))sel.value=prev;
-    else sel.value=months[0];
+    ms.forEach(m=>{const[y,mo]=m.split('-'),o=document.createElement('option');o.value=m;o.textContent=`${y}年${parseInt(mo)}月`;sel.appendChild(o)});
+    if(prev&&ms.includes(prev))sel.value=prev;else sel.value=ms[0];
   });
 }
 
-function switchTab(name){
-  document.querySelectorAll('.tab').forEach((t,i)=>{
-    t.classList.toggle('active',['input','list','summary'][i]===name);
+function initApp(){
+  const d=new Date();
+  document.getElementById('header-date').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DAYS[d.getDay()]}）`;
+  document.getElementById('inp-date').value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  fillSelects();
+  updatePinStatus();
+}
+
+function sw(name){
+  ['input','list','summary','settings'].forEach((n,i)=>{
+    document.querySelectorAll('.tab')[i].classList.toggle('active',n===name);
+    document.getElementById('sec-'+n).classList.toggle('active',n===name);
   });
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.getElementById('sec-'+name).classList.add('active');
-  populateMonthSelects();
+  fillSelects();
   if(name==='list')renderList();
-  if(name==='summary')renderSummary();
+  if(name==='summary')renderSum();
 }
 
 function saveEntry(){
   const date=document.getElementById('inp-date').value;
-  const cash=parseInt(document.getElementById('inp-cash').value||0);
-  const cl=parseInt(document.getElementById('inp-cl').value||0);
   if(!date){showMsg('日付を入力してください','err');return}
-  if(isNaN(cash)||cash<0||isNaN(cl)||cl<0){showMsg('金額は0以上の数字を入力してください','err');return}
-  const data=load();
-  const idx=data.findIndex(r=>r.date===date);
-  const entry={date,cash,cl,total:cash+cl};
-  if(idx>=0){
-    if(!confirm(`${date} のデータが既にあります。上書きしますか？`))return;
-    data[idx]=entry;
-  }else{data.push(entry)}
+  const entry={
+    date,cash:ints('inp-cash'),cl:ints('inp-cl'),
+    male:ints('c-male'),female:ints('c-female'),
+    elem:ints('c-elem'),mid:ints('c-mid'),high:ints('c-high'),
+    perm:ints('c-perm'),color:ints('c-color')
+  };
+  entry.total=entry.cash+entry.cl;
+  entry.guests=entry.male+entry.female+entry.elem+entry.mid+entry.high;
+  const data=load(),idx=data.findIndex(r=>r.date===date);
+  if(idx>=0){if(!confirm(`${date} のデータが既にあります。上書きしますか？`))return;data[idx]=entry}
+  else data.push(entry);
   data.sort((a,b)=>a.date.localeCompare(b.date));
-  save(data);
-  showMsg('登録しました ✓','ok');
-  renderTodayMetrics(entry,data);
-  document.getElementById('inp-cash').value='';
-  document.getElementById('inp-cl').value='';
+  persist(data);showMsg('登録しました ✓','ok');
+  renderToday(entry,data);
+  ['inp-cash','inp-cl','c-male','c-female','c-elem','c-mid','c-high','c-perm','c-color'].forEach(id=>document.getElementById(id).value='');
 }
 
-function showMsg(text,type){
-  const el=document.getElementById('msg');
-  el.textContent=text;el.className='msg '+type;el.style.display='block';
+function showMsg(t,type){
+  const el=document.getElementById('msg');el.textContent=t;el.className='msg '+type;el.style.display='block';
   setTimeout(()=>el.style.display='none',2500);
 }
 
-function renderTodayMetrics(entry,data){
-  const ym=toYM(entry.date);
-  const md=data.filter(r=>toYM(r.date)===ym);
-  const mTotal=md.reduce((s,r)=>s+r.total,0);
-  const n=md.length;
+function renderToday(e,data){
+  const ym=toYM(e.date),md=data.filter(r=>toYM(r.date)===ym);
+  const mT=md.reduce((s,r)=>s+r.total,0),n=md.length;
+  const up=e.guests?Math.round(e.total/e.guests):0;
   document.getElementById('today-cards').innerHTML=`
-    <div class="metric"><div class="lbl">現金</div><div class="val cash">¥${fmt(entry.cash)}</div></div>
-    <div class="metric"><div class="lbl">キャッシュレス</div><div class="val cl">¥${fmt(entry.cl)}</div></div>
-    <div class="metric"><div class="lbl">本日合計</div><div class="val total">¥${fmt(entry.total)}</div></div>
-    <div class="metric"><div class="lbl">月累計</div><div class="val">¥${fmt(mTotal)}</div><div class="sub">${n}営業日</div></div>
-    <div class="metric"><div class="lbl">月平均/日</div><div class="val">¥${fmt(n?mTotal/n:0)}</div></div>
+    <div class="m"><div class="l">本日売上</div><div class="v" style="color:#185fa5">¥${fmt(e.total)}</div><div class="s">現金¥${fmt(e.cash)}/CL¥${fmt(e.cl)}</div></div>
+    <div class="m"><div class="l">本日客数</div><div class="v">${e.guests}人</div><div class="s">男${e.male} 女${e.female} 小${e.elem} 中${e.mid} 高${e.high}</div></div>
+    <div class="m"><div class="l">客単価</div><div class="v">${up?'¥'+fmt(up):'-'}</div><div class="s">P:${e.perm} C:${e.color}</div></div>
+    <div class="m"><div class="l">月累計</div><div class="v">¥${fmt(mT)}</div><div class="s">${n}営業日</div></div>
+    <div class="m"><div class="l">月平均/日</div><div class="v">¥${fmt(n?mT/n:0)}</div></div>
   `;
   document.getElementById('today-box').style.display='block';
 }
 
 function renderList(){
-  const ym=document.getElementById('list-month')?.value;
-  if(!ym)return;
+  const ym=document.getElementById('list-month')?.value;if(!ym)return;
   const data=load().filter(r=>toYM(r.date)===ym);
   document.getElementById('list-count').textContent=`${data.length}件`;
   const body=document.getElementById('list-body');
-  if(!data.length){body.innerHTML='<div class="empty">この月のデータはまだありません</div>';return}
-
-  const byWeek={};
-  data.forEach(r=>{const w=weekNum(r.date);if(!byWeek[w])byWeek[w]=[];byWeek[w].push(r)});
-
+  if(!data.length){body.innerHTML='<div class="empty">この月のデータはありません</div>';return}
+  const byW={};data.forEach(r=>{const w=wn(r.date);if(!byW[w])byW[w]=[];byW[w].push(r)});
   let html='';
-  Object.keys(byWeek).sort((a,b)=>+a-+b).forEach(w=>{
-    const rows=byWeek[w];
-    const wTotal=rows.reduce((s,r)=>s+r.total,0);
-    const wCash=rows.reduce((s,r)=>s+r.cash,0);
-    const wCl=rows.reduce((s,r)=>s+r.cl,0);
-    html+=`<div class="card" style="padding:0;overflow:hidden;margin-bottom:10px">
-    <table>
-    <thead><tr class="week-header"><td colspan="6">第${w}週　¥${fmt(wTotal)}　（現金 ¥${fmt(wCash)} ／ CL ¥${fmt(wCl)}）</td></tr>
-    <tr><th>日付</th><th>曜</th><th class="num">現金</th><th class="num">CL</th><th class="num">合計</th><th></th></tr></thead>
-    <tbody>`;
+  Object.keys(byW).sort((a,b)=>+a-+b).forEach(w=>{
+    const rows=byW[w],wT=rows.reduce((s,r)=>s+r.total,0),wG=rows.reduce((s,r)=>s+r.guests,0);
+    html+=`<div class="card" style="padding:0;overflow:hidden;margin-bottom:10px"><table>
+    <thead><tr class="wh"><td colspan="8" style="padding:7px 8px">第${w}週　¥${fmt(wT)}　${wG}人</td></tr>
+    <tr><th>日</th><th class="nc">曜</th><th class="nr">売上</th><th class="nr">客数</th><th class="nr">単価</th><th class="nr">P</th><th class="nr">C</th><th></th></tr></thead><tbody>`;
     rows.forEach(r=>{
-      const di=dayIdx(r.date);
+      const d=di(r.date),up=r.guests?Math.round(r.total/r.guests):0;
       html+=`<tr>
         <td>${r.date.slice(5).replace('-','/')}</td>
-        <td><span class="day-badge d${di}">${DAYS[di]}</span></td>
-        <td class="num" style="color:#185fa5">¥${fmt(r.cash)}</td>
-        <td class="num" style="color:#3b6d11">¥${fmt(r.cl)}</td>
-        <td class="num total">¥${fmt(r.total)}</td>
-        <td><button class="del-btn" onclick="deleteEntry('${r.date}')">削除</button></td>
+        <td class="nc"><span class="db d${d}">${DAYS[d]}</span></td>
+        <td class="nr fw">¥${fmt(r.total)}</td>
+        <td class="nc">${r.guests}</td>
+        <td class="nr">${up?'¥'+fmt(up):'-'}</td>
+        <td class="nc">${r.perm||'-'}</td>
+        <td class="nc">${r.color||'-'}</td>
+        <td><button class="del-btn" onclick="delEntry('${r.date}')">削除</button></td>
       </tr>`;
     });
     html+='</tbody></table></div>';
@@ -342,136 +490,161 @@ function renderList(){
   body.innerHTML=html;
 }
 
-function deleteEntry(date){
+function delEntry(date){
   if(!confirm(`${date} のデータを削除しますか？`))return;
-  save(load().filter(r=>r.date!==date));
-  renderList();populateMonthSelects();
+  persist(load().filter(r=>r.date!==date));renderList();fillSelects();
+}
+
+// ── CSV ─────────────────────────────────────────────
+const CSV_HEADER='日付,曜日,現金,キャッシュレス,合計,男性,女性,小学生,中学生,高校生,客数合計,パーマ,カラーリング';
+
+function toCSVRow(r){
+  return [r.date,DAYS[di(r.date)],r.cash,r.cl,r.total,r.male||0,r.female||0,r.elem||0,r.mid||0,r.high||0,r.guests||0,r.perm||0,r.color||0].join(',');
 }
 
 function exportCSV(){
-  const ym=document.getElementById('list-month')?.value;
-  if(!ym)return;
+  const ym=document.getElementById('list-month')?.value;if(!ym)return;
   const data=load().filter(r=>toYM(r.date)===ym);
   if(!data.length){alert('データがありません');return}
-  let csv='日付,曜日,現金,キャッシュレス,合計\n';
-  data.forEach(r=>{csv+=`${r.date},${DAYS[dayIdx(r.date)]},${r.cash},${r.cl},${r.total}\n`});
-  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`売上_${ym}.csv`;a.click();
+  const csv=CSV_HEADER+'\n'+data.map(toCSVRow).join('\n');
+  dlCSV(csv,`売上_${ym}.csv`);
 }
 
-function renderSummary(){
-  const ym=document.getElementById('sum-month')?.value;
-  if(!ym)return;
+function exportAllCSV(){
+  const data=load();
+  if(!data.length){alert('データがありません');return}
+  const csv=CSV_HEADER+'\n'+data.map(toCSVRow).join('\n');
+  dlCSV(csv,'売上_全期間.csv');
+}
+
+function dlCSV(csv,name){
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();
+}
+
+function importCSV(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const lines=e.target.result.replace(/^\uFEFF/,'').split('\n').filter(l=>l.trim());
+      if(!lines.length){alert('CSVが空です');return}
+      const header=lines[0];
+      if(!header.includes('日付')){alert('フォーマットが違います。このアプリで出力したCSVを使用してください');return}
+      const imported=[];
+      for(let i=1;i<lines.length;i++){
+        const cols=lines[i].split(',');
+        if(cols.length<13||!cols[0].match(/^\d{4}-\d{2}-\d{2}$/))continue;
+        imported.push({
+          date:cols[0],cash:parseInt(cols[2])||0,cl:parseInt(cols[3])||0,
+          total:parseInt(cols[4])||0,male:parseInt(cols[5])||0,female:parseInt(cols[6])||0,
+          elem:parseInt(cols[7])||0,mid:parseInt(cols[8])||0,high:parseInt(cols[9])||0,
+          guests:parseInt(cols[10])||0,perm:parseInt(cols[11])||0,color:parseInt(cols[12])||0
+        });
+      }
+      if(!imported.length){alert('有効なデータが見つかりませんでした');return}
+      const existing=load();
+      let added=0,updated=0;
+      imported.forEach(r=>{
+        const idx=existing.findIndex(e=>e.date===r.date);
+        if(idx>=0){existing[idx]=r;updated++}else{existing.push(r);added++}
+      });
+      existing.sort((a,b)=>a.date.localeCompare(b.date));
+      persist(existing);fillSelects();
+      alert(`インポート完了：新規${added}件、更新${updated}件`);
+    }catch(err){alert('読み込みエラー：'+err.message)}
+  };
+  reader.readAsText(file,'UTF-8');
+  input.value='';
+}
+
+function deleteAll(){
+  if(!confirm('全データを削除しますか？\nこの操作は取り消せません。'))return;
+  if(!confirm('本当に削除しますか？'))return;
+  localStorage.removeItem(KEY);fillSelects();
+  alert('全データを削除しました');
+}
+
+// ── 集計 ─────────────────────────────────────────────
+function renderSum(){
+  const ym=document.getElementById('sum-month')?.value;if(!ym)return;
   const data=load().filter(r=>toYM(r.date)===ym);
-  const mTotal=data.reduce((s,r)=>s+r.total,0);
-  const mCash=data.reduce((s,r)=>s+r.cash,0);
-  const mCl=data.reduce((s,r)=>s+r.cl,0);
-  const n=data.length;
-
-  document.getElementById('sum-month-cards').innerHTML=`
-    <div class="metric"><div class="lbl">月間売上合計</div><div class="val">¥${fmt(mTotal)}</div><div class="sub">${n}営業日</div></div>
-    <div class="metric"><div class="lbl">現金合計</div><div class="val cash">¥${fmt(mCash)}</div></div>
-    <div class="metric"><div class="lbl">CL合計</div><div class="val cl">¥${fmt(mCl)}</div></div>
-    <div class="metric"><div class="lbl">1日平均</div><div class="val">¥${fmt(n?mTotal/n:0)}</div></div>
-    <div class="metric"><div class="lbl">現金比率</div><div class="val">${mTotal?Math.round(mCash/mTotal*100):0}%</div></div>
-    <div class="metric"><div class="lbl">CL比率</div><div class="val">${mTotal?Math.round(mCl/mTotal*100):0}%</div></div>
+  const mT=data.reduce((s,r)=>s+r.total,0),mC=data.reduce((s,r)=>s+r.cash,0),mL=data.reduce((s,r)=>s+r.cl,0);
+  const mG=data.reduce((s,r)=>s+r.guests,0),n=data.length,up=mG?Math.round(mT/mG):0;
+  document.getElementById('sum-cards').innerHTML=`
+    <div class="m"><div class="l">月間売上合計</div><div class="v">¥${fmt(mT)}</div><div class="s">${n}営業日</div></div>
+    <div class="m"><div class="l">現金合計</div><div class="v" style="color:#185fa5">¥${fmt(mC)}</div></div>
+    <div class="m"><div class="l">CL合計</div><div class="v" style="color:#3b6d11">¥${fmt(mL)}</div></div>
+    <div class="m"><div class="l">月間客数</div><div class="v">${mG}人</div></div>
+    <div class="m"><div class="l">1日平均客数</div><div class="v">${n?fmt(mG/n):0}人</div></div>
+    <div class="m"><div class="l">平均客単価</div><div class="v">¥${fmt(up)}</div></div>
   `;
+  const gK=['male','female','elem','mid','high','perm','color'];
+  const gL=['男性','女性','小学生','中学生','高校生','パーマ','カラー'];
+  const gT=gK.map(k=>data.reduce((s,r)=>s+(r[k]||0),0));
+  let gH='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">';
+  gK.forEach((k,i)=>{if(!gT[i])return;const pct=mG&&i<5?Math.round(gT[i]/mG*100):0;gH+=`<div class="m"><div class="l">${gL[i]}</div><div class="v">${gT[i]}${i<5?'人':''}</div><div class="s">${i<5?pct+'%':''}</div></div>`;});
+  document.getElementById('guest-sum').innerHTML=gH+'</div>';
 
-  const byDay=Array.from({length:7},()=>({cash:0,cl:0,total:0,count:0}));
-  data.forEach(r=>{const i=dayIdx(r.date);byDay[i].cash+=r.cash;byDay[i].cl+=r.cl;byDay[i].total+=r.total;byDay[i].count++});
-  let dHtml='';
-  DAYS.forEach((d,i)=>{
-    if(!byDay[i].count)return;
-    const avg=byDay[i].total/byDay[i].count;
-    dHtml+=`<tr>
-      <td><span class="day-badge d${i}">${d}</span></td>
-      <td class="num" style="color:#185fa5">¥${fmt(byDay[i].cash)}</td>
-      <td class="num" style="color:#3b6d11">¥${fmt(byDay[i].cl)}</td>
-      <td class="num total">¥${fmt(byDay[i].total)}</td>
-      <td class="num">¥${fmt(avg)}</td>
-      <td class="num">${byDay[i].count}</td>
-    </tr>`;
-  });
-  document.getElementById('day-summary').innerHTML=dHtml||'<tr><td colspan="6" class="empty">データなし</td></tr>';
+  const byD=Array.from({length:7},()=>({t:0,g:0,pm:0,cl:0,n:0}));
+  data.forEach(r=>{const i=di(r.date);byD[i].t+=r.total;byD[i].g+=r.guests;byD[i].pm+=r.perm||0;byD[i].cl+=r.color||0;byD[i].n++});
+  let dH='';
+  DAYS.forEach((d,i)=>{if(!byD[i].n)return;const up=byD[i].g?Math.round(byD[i].t/byD[i].g):0;dH+=`<tr><td><span class="db d${i}">${d}</span></td><td class="nr fw">¥${fmt(byD[i].t)}</td><td class="nc">${byD[i].g}</td><td class="nr">${up?'¥'+fmt(up):'-'}</td><td class="nc">${byD[i].pm||'-'}</td><td class="nc">${byD[i].cl||'-'}</td></tr>`;});
+  document.getElementById('day-sum').innerHTML=dH||'<tr><td colspan="6" class="empty">データなし</td></tr>';
 
-  const byWeek={};
-  data.forEach(r=>{const w=weekNum(r.date);if(!byWeek[w])byWeek[w]={cash:0,cl:0,total:0,days:0};byWeek[w].cash+=r.cash;byWeek[w].cl+=r.cl;byWeek[w].total+=r.total;byWeek[w].days++});
-  let wHtml='';
-  Object.keys(byWeek).sort((a,b)=>+a-+b).forEach(w=>{
-    const wk=byWeek[w];
-    wHtml+=`<tr>
-      <td>第${w}週</td>
-      <td class="num" style="color:#185fa5">¥${fmt(wk.cash)}</td>
-      <td class="num" style="color:#3b6d11">¥${fmt(wk.cl)}</td>
-      <td class="num total">¥${fmt(wk.total)}</td>
-      <td class="num">¥${fmt(wk.days?wk.total/wk.days:0)}</td>
-    </tr>`;
-  });
-  document.getElementById('week-summary').innerHTML=wHtml||'<tr><td colspan="5" class="empty">データなし</td></tr>';
-
+  const byW={};data.forEach(r=>{const w=wn(r.date);if(!byW[w])byW[w]={t:0,g:0,days:0};byW[w].t+=r.total;byW[w].g+=r.guests;byW[w].days++});
+  let wH='';Object.keys(byW).sort((a,b)=>+a-+b).forEach(w=>{const wk=byW[w];wH+=`<tr><td>第${w}週</td><td class="nr fw">¥${fmt(wk.t)}</td><td class="nc">${wk.g}</td><td class="nr">¥${fmt(wk.days?wk.t/wk.days:0)}</td></tr>`;});
+  document.getElementById('week-sum').innerHTML=wH||'<tr><td colspan="4" class="empty">データなし</td></tr>';
   renderChart(data);
 }
 
 function setChart(mode,btn){
-  chartMode=mode;
-  document.querySelectorAll('.chart-btns .btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  const ym=document.getElementById('sum-month')?.value;
-  if(!ym)return;
+  chartMode=mode;document.querySelectorAll('.chart-btns .btn').forEach(b=>b.classList.remove('act'));btn.classList.add('act');
+  const ym=document.getElementById('sum-month')?.value;if(!ym)return;
   renderChart(load().filter(r=>toYM(r.date)===ym));
 }
 
 function renderChart(data){
-  if(chart){chart.destroy();chart=null}
-  const ctx=document.getElementById('bar-chart').getContext('2d');
-  let labels=[],cashData=[],clData=[];
-
-  if(chartMode==='daily'){
-    data.forEach(r=>{
-      labels.push(`${r.date.slice(8)}(${DAYS[dayIdx(r.date)]})`);
-      cashData.push(r.cash);clData.push(r.cl);
-    });
-  }else if(chartMode==='weekly'){
-    const bw={};
-    data.forEach(r=>{const w=weekNum(r.date);if(!bw[w])bw[w]={c:0,l:0};bw[w].c+=r.cash;bw[w].l+=r.cl});
-    Object.keys(bw).sort((a,b)=>+a-+b).forEach(w=>{labels.push(`第${w}週`);cashData.push(bw[w].c);clData.push(bw[w].l)});
-  }else{
-    const bd=Array.from({length:7},()=>({c:0,l:0,n:0}));
-    data.forEach(r=>{const i=dayIdx(r.date);bd[i].c+=r.cash;bd[i].l+=r.cl;bd[i].n++});
-    DAYS.forEach((d,i)=>{if(bd[i].n){labels.push(d);cashData.push(bd[i].c);clData.push(bd[i].l)}});
+  if(myChart){myChart.destroy();myChart=null}
+  const ctx=document.getElementById('chart').getContext('2d');
+  let labels=[],datasets=[],leg='';
+  if(chartMode==='sales'){
+    data.forEach(r=>labels.push(`${r.date.slice(8)}(${DAYS[di(r.date)]})`));
+    datasets=[{label:'現金',data:data.map(r=>r.cash),backgroundColor:'#185fa5',borderRadius:3,borderSkipped:false},{label:'CL',data:data.map(r=>r.cl),backgroundColor:'#3b6d11',borderRadius:3,borderSkipped:false}];
+    leg='<span><span class="leg-sq" style="background:#185fa5"></span>現金</span><span><span class="leg-sq" style="background:#3b6d11"></span>CL</span>';
+  }else if(chartMode==='guests'){
+    data.forEach(r=>labels.push(`${r.date.slice(8)}(${DAYS[di(r.date)]})`));
+    datasets=[
+      {label:'男性',data:data.map(r=>r.male||0),backgroundColor:'#378ADD',borderRadius:3,borderSkipped:false},
+      {label:'女性',data:data.map(r=>r.female||0),backgroundColor:'#D4537E',borderRadius:3,borderSkipped:false},
+      {label:'小学生',data:data.map(r=>r.elem||0),backgroundColor:'#639922',borderRadius:3,borderSkipped:false},
+      {label:'中学生',data:data.map(r=>r.mid||0),backgroundColor:'#EF9F27',borderRadius:3,borderSkipped:false},
+      {label:'高校生',data:data.map(r=>r.high||0),backgroundColor:'#7F77DD',borderRadius:3,borderSkipped:false},
+    ];
+    leg='<span><span class="leg-sq" style="background:#378ADD"></span>男</span><span><span class="leg-sq" style="background:#D4537E"></span>女</span><span><span class="leg-sq" style="background:#639922"></span>小</span><span><span class="leg-sq" style="background:#EF9F27"></span>中</span><span><span class="leg-sq" style="background:#7F77DD"></span>高</span>';
+  }else if(chartMode==='dow'){
+    const byD=Array.from({length:7},()=>({c:0,l:0,n:0}));
+    data.forEach(r=>{const i=di(r.date);byD[i].c+=r.cash;byD[i].l+=r.cl;byD[i].n++});
+    DAYS.forEach((d,i)=>{if(byD[i].n)labels.push(d)});
+    const fl=DAYS.map((d,i)=>byD[i].n?byD[i]:null).filter(Boolean);
+    datasets=[{label:'現金',data:fl.map(r=>r.c),backgroundColor:'#185fa5',borderRadius:3,borderSkipped:false},{label:'CL',data:fl.map(r=>r.l),backgroundColor:'#3b6d11',borderRadius:3,borderSkipped:false}];
+    leg='<span><span class="leg-sq" style="background:#185fa5"></span>現金</span><span><span class="leg-sq" style="background:#3b6d11"></span>CL</span>';
+  }else if(chartMode==='menu'){
+    const md=data.filter(r=>r.perm||r.color);
+    md.forEach(r=>labels.push(`${r.date.slice(8)}(${DAYS[di(r.date)]})`));
+    datasets=[{label:'パーマ',data:md.map(r=>r.perm||0),backgroundColor:'#BA7517',borderRadius:3,borderSkipped:false},{label:'カラー',data:md.map(r=>r.color||0),backgroundColor:'#534AB7',borderRadius:3,borderSkipped:false}];
+    leg='<span><span class="leg-sq" style="background:#BA7517"></span>パーマ</span><span><span class="leg-sq" style="background:#534AB7"></span>カラー</span>';
+    if(!labels.length){labels=['データなし'];datasets=[{label:'',data:[0]}]}
   }
-
-  chart=new Chart(ctx,{
-    type:'bar',
-    data:{labels,datasets:[
-      {label:'現金',data:cashData,backgroundColor:'#3266ad',borderRadius:4,borderSkipped:false},
-      {label:'キャッシュレス',data:clData,backgroundColor:'#639922',borderRadius:4,borderSkipped:false}
-    ]},
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`¥${fmt(c.raw)}`}}},
-      scales:{
-        x:{stacked:true,ticks:{autoSkip:false,maxRotation:45,font:{size:11}}},
-        y:{stacked:true,ticks:{callback:v=>`¥${fmt(v)}`,font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}}
-      }
-    }
-  });
+  document.getElementById('chart-leg').innerHTML=leg;
+  const isCount=chartMode==='guests'||chartMode==='menu';
+  myChart=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>isCount?`${c.dataset.label}: ${c.raw}人`:`¥${fmt(c.raw)}`}}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:45,font:{size:10}}},y:{stacked:true,ticks:{callback:v=>isCount?`${v}人`:`¥${fmt(v)}`,font:{size:10}},grid:{color:'rgba(128,128,128,0.1)'}}}}});
 }
 
-populateMonthSelects();
-</script>
+// ── Service Worker ────────────────────────────────────
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 
-<!-- Service Worker登録 -->
-<script>
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js').then(r=>{
-      console.log('SW registered');
-    }).catch(e=>{console.log('SW failed:',e)});
-  });
-}
+initPin();
 </script>
 </body>
 </html>
