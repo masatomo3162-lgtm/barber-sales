@@ -203,6 +203,7 @@ select:focus{outline:none;border-color:#185fa5}
       <select id="sum-month" onchange="renderSum()"></select>
     </div>
     <div class="mg" id="sum-cards"></div>
+    <div id="sum-monthly"></div>
     <div class="card">
       <div class="card-title">客層集計</div>
       <div id="guest-sum"></div>
@@ -394,12 +395,26 @@ function months(data){
 
 function fillSelects(){
   const data=load(),ms=months(data);
-  ['list-month','sum-month'].forEach(id=>{
-    const sel=document.getElementById(id),prev=sel.value;
-    sel.innerHTML='';
-    ms.forEach(m=>{const[y,mo]=m.split('-'),o=document.createElement('option');o.value=m;o.textContent=`${y}年${parseInt(mo)}月`;sel.appendChild(o)});
-    if(prev&&ms.includes(prev))sel.value=prev;else sel.value=ms[0];
-  });
+  const now=new Date(),cur=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+  // 一覧タブ：今月をデフォルト
+  const listSel=document.getElementById('list-month');
+  const listPrev=listSel.value;
+  listSel.innerHTML='';
+  ms.forEach(m=>{const[y,mo]=m.split('-'),o=document.createElement('option');o.value=m;o.textContent=`${y}年${parseInt(mo)}月`;listSel.appendChild(o)});
+  if(listPrev&&ms.includes(listPrev))listSel.value=listPrev;
+  else if(ms.includes(cur))listSel.value=cur;
+  else listSel.value=ms[0];
+
+  // 集計タブ：今月をデフォルト＋全期間オプション
+  const sumSel=document.getElementById('sum-month');
+  const sumPrev=sumSel.value;
+  sumSel.innerHTML='';
+  const allOpt=document.createElement('option');allOpt.value='all';allOpt.textContent='全期間';sumSel.appendChild(allOpt);
+  ms.forEach(m=>{const[y,mo]=m.split('-'),o=document.createElement('option');o.value=m;o.textContent=`${y}年${parseInt(mo)}月`;sumSel.appendChild(o)});
+  if(sumPrev&&(sumPrev==='all'||ms.includes(sumPrev)))sumSel.value=sumPrev;
+  else if(ms.includes(cur))sumSel.value=cur;
+  else sumSel.value=ms[0];
 }
 
 function initApp(){
@@ -568,14 +583,31 @@ function deleteAll(){
 // ── 集計 ─────────────────────────────────────────────
 function renderSum(){
   const ym=document.getElementById('sum-month')?.value;if(!ym)return;
-  const data=load().filter(r=>toYM(r.date)===ym);
+  const isAll=ym==='all';
+  const data=isAll?load():load().filter(r=>toYM(r.date)===ym);
   const mT=data.reduce((s,r)=>s+r.total,0),mC=data.reduce((s,r)=>s+r.cash,0),mL=data.reduce((s,r)=>s+r.cl,0);
   const mG=data.reduce((s,r)=>s+r.guests,0),n=data.length,up=mG?Math.round(mT/mG):0;
+  const periodLabel=isAll?'全期間':'月間';
+  // 全期間モード：月別売上も表示
+  let monthlyHtml='';
+  if(isAll){
+    const byYM={};
+    data.forEach(r=>{const ym=toYM(r.date);if(!byYM[ym])byYM[ym]={t:0,g:0,days:0};byYM[ym].t+=r.total;byYM[ym].g+=r.guests;byYM[ym].days++});
+    monthlyHtml=`<div class="card"><div class="card-title">月別売上</div><table>
+      <thead><tr><th>月</th><th class="nr">売上合計</th><th class="nr">客数</th><th class="nr">営業日</th><th class="nr">1日平均</th></tr></thead><tbody>`;
+    Object.keys(byYM).sort().forEach(m=>{
+      const[y,mo]=m.split('-'),mk=byYM[m];
+      monthlyHtml+=`<tr><td>${y}年${parseInt(mo)}月</td><td class="nr fw">¥${fmt(mk.t)}</td><td class="nc">${mk.g}人</td><td class="nc">${mk.days}日</td><td class="nr">¥${fmt(mk.days?mk.t/mk.days:0)}</td></tr>`;
+    });
+    monthlyHtml+='</tbody></table></div>';
+  }
+  document.getElementById('sum-monthly').innerHTML=monthlyHtml;
+
   document.getElementById('sum-cards').innerHTML=`
-    <div class="m"><div class="l">月間売上合計</div><div class="v">¥${fmt(mT)}</div><div class="s">${n}営業日</div></div>
+    <div class="m"><div class="l">${periodLabel}売上合計</div><div class="v">¥${fmt(mT)}</div><div class="s">${n}営業日</div></div>
     <div class="m"><div class="l">現金合計</div><div class="v" style="color:#185fa5">¥${fmt(mC)}</div></div>
     <div class="m"><div class="l">CL合計</div><div class="v" style="color:#3b6d11">¥${fmt(mL)}</div></div>
-    <div class="m"><div class="l">月間客数</div><div class="v">${mG}人</div></div>
+    <div class="m"><div class="l">${periodLabel}客数</div><div class="v">${mG}人</div></div>
     <div class="m"><div class="l">1日平均客数</div><div class="v">${n?fmt(mG/n):0}人</div></div>
     <div class="m"><div class="l">平均客単価</div><div class="v">¥${fmt(up)}</div></div>
   `;
@@ -595,22 +627,31 @@ function renderSum(){
   const byW={};data.forEach(r=>{const w=wn(r.date);if(!byW[w])byW[w]={t:0,g:0,days:0};byW[w].t+=r.total;byW[w].g+=r.guests;byW[w].days++});
   let wH='';Object.keys(byW).sort((a,b)=>+a-+b).forEach(w=>{const wk=byW[w];wH+=`<tr><td>第${w}週</td><td class="nr fw">¥${fmt(wk.t)}</td><td class="nc">${wk.g}</td><td class="nr">¥${fmt(wk.days?wk.t/wk.days:0)}</td></tr>`;});
   document.getElementById('week-sum').innerHTML=wH||'<tr><td colspan="4" class="empty">データなし</td></tr>';
-  renderChart(data);
+  renderChart(data,isAll);
 }
 
 function setChart(mode,btn){
   chartMode=mode;document.querySelectorAll('.chart-btns .btn').forEach(b=>b.classList.remove('act'));btn.classList.add('act');
   const ym=document.getElementById('sum-month')?.value;if(!ym)return;
-  renderChart(load().filter(r=>toYM(r.date)===ym));
+  const data=ym==='all'?load():load().filter(r=>toYM(r.date)===ym);
+  renderChart(data,ym==='all');
 }
 
-function renderChart(data){
+function renderChart(data,isAll=false){
   if(myChart){myChart.destroy();myChart=null}
   const ctx=document.getElementById('chart').getContext('2d');
   let labels=[],datasets=[],leg='';
   if(chartMode==='sales'){
-    data.forEach(r=>labels.push(`${r.date.slice(8)}(${DAYS[di(r.date)]})`));
-    datasets=[{label:'現金',data:data.map(r=>r.cash),backgroundColor:'#185fa5',borderRadius:3,borderSkipped:false},{label:'CL',data:data.map(r=>r.cl),backgroundColor:'#3b6d11',borderRadius:3,borderSkipped:false}];
+    if(isAll){
+      // 全期間：月別集計
+      const byYM={};data.forEach(r=>{const m=toYM(r.date);if(!byYM[m])byYM[m]={c:0,l:0};byYM[m].c+=r.cash;byYM[m].l+=r.cl});
+      Object.keys(byYM).sort().forEach(m=>{const[y,mo]=m.split('-');labels.push(`${y}/${parseInt(mo)}月`);});
+      const sorted=Object.keys(byYM).sort();
+      datasets=[{label:'現金',data:sorted.map(m=>byYM[m].c),backgroundColor:'#185fa5',borderRadius:3,borderSkipped:false},{label:'CL',data:sorted.map(m=>byYM[m].l),backgroundColor:'#3b6d11',borderRadius:3,borderSkipped:false}];
+    }else{
+      data.forEach(r=>labels.push(`${r.date.slice(8)}(${DAYS[di(r.date)]})`));
+      datasets=[{label:'現金',data:data.map(r=>r.cash),backgroundColor:'#185fa5',borderRadius:3,borderSkipped:false},{label:'CL',data:data.map(r=>r.cl),backgroundColor:'#3b6d11',borderRadius:3,borderSkipped:false}];
+    }
     leg='<span><span class="leg-sq" style="background:#185fa5"></span>現金</span><span><span class="leg-sq" style="background:#3b6d11"></span>CL</span>';
   }else if(chartMode==='guests'){
     data.forEach(r=>labels.push(`${r.date.slice(8)}(${DAYS[di(r.date)]})`));
