@@ -210,12 +210,12 @@ select:focus{outline:none;border-color:#185fa5}
     </div>
     <div class="card">
       <div class="card-title">曜日別集計</div>
-      <table><thead><tr><th>曜</th><th class="nr">売上合計</th><th class="nr">客数</th><th class="nr">客単価</th><th class="nr">P</th><th class="nr">C</th></tr></thead>
+      <table><thead><tr><th>曜</th><th class="nr">現金</th><th class="nr">CL</th><th class="nr">売上合計</th><th class="nr">客数</th><th class="nr">客単価</th><th class="nr">P/C</th></tr></thead>
       <tbody id="day-sum"></tbody></table>
     </div>
     <div class="card">
       <div class="card-title">週別集計</div>
-      <table><thead><tr><th>週</th><th class="nr">売上合計</th><th class="nr">客数</th><th class="nr">1日平均</th></tr></thead>
+      <table><thead><tr><th>週</th><th class="nr">現金</th><th class="nr">CL</th><th class="nr">売上合計</th><th class="nr">客数</th><th class="nr">1日平均</th></tr></thead>
       <tbody id="week-sum"></tbody></table>
     </div>
     <div class="card">
@@ -384,7 +384,7 @@ function persist(d){localStorage.setItem(KEY,JSON.stringify(d))}
 function fmt(n){return Math.round(n).toLocaleString('ja-JP')}
 function toYM(s){return s.slice(0,7)}
 function di(s){return new Date(s+'T00:00:00').getDay()}
-function wn(s){const d=new Date(s+'T00:00:00'),f=new Date(d.getFullYear(),d.getMonth(),1);return Math.floor((d.getDate()+f.getDay()-1)/7)+1}
+function wn(s){const d=new Date(s+'T00:00:00');return Math.ceil(d.getDate()/7)}
 function ints(id){return parseInt(document.getElementById(id).value)||0}
 
 function months(data){
@@ -483,20 +483,25 @@ function renderList(){
   const byW={};data.forEach(r=>{const w=wn(r.date);if(!byW[w])byW[w]=[];byW[w].push(r)});
   let html='';
   Object.keys(byW).sort((a,b)=>+a-+b).forEach(w=>{
-    const rows=byW[w],wT=rows.reduce((s,r)=>s+r.total,0),wG=rows.reduce((s,r)=>s+r.guests,0);
+    const rows=byW[w];
+    const wT=rows.reduce((s,r)=>s+r.total,0);
+    const wC=rows.reduce((s,r)=>s+r.cash,0);
+    const wL=rows.reduce((s,r)=>s+r.cl,0);
+    const wG=rows.reduce((s,r)=>s+r.guests,0);
     html+=`<div class="card" style="padding:0;overflow:hidden;margin-bottom:10px"><table>
-    <thead><tr class="wh"><td colspan="8" style="padding:7px 8px">第${w}週　¥${fmt(wT)}　${wG}人</td></tr>
-    <tr><th>日</th><th class="nc">曜</th><th class="nr">売上</th><th class="nr">客数</th><th class="nr">単価</th><th class="nr">P</th><th class="nr">C</th><th></th></tr></thead><tbody>`;
+    <thead><tr class="wh"><td colspan="9" style="padding:7px 8px">第${w}週　合計¥${fmt(wT)}（現金¥${fmt(wC)} / CL¥${fmt(wL)}）　${wG}人</td></tr>
+    <tr><th>日</th><th class="nc">曜</th><th class="nr">現金</th><th class="nr">CL</th><th class="nr">合計</th><th class="nr">客数</th><th class="nr">単価</th><th class="nr">P/C</th><th></th></tr></thead><tbody>`;
     rows.forEach(r=>{
       const d=di(r.date),up=r.guests?Math.round(r.total/r.guests):0;
       html+=`<tr>
         <td>${r.date.slice(5).replace('-','/')}</td>
         <td class="nc"><span class="db d${d}">${DAYS[d]}</span></td>
+        <td class="nr" style="color:#185fa5">¥${fmt(r.cash)}</td>
+        <td class="nr" style="color:#3b6d11">¥${fmt(r.cl)}</td>
         <td class="nr fw">¥${fmt(r.total)}</td>
         <td class="nc">${r.guests}</td>
         <td class="nr">${up?'¥'+fmt(up):'-'}</td>
-        <td class="nc">${r.perm||'-'}</td>
-        <td class="nc">${r.color||'-'}</td>
+        <td class="nc" style="font-size:11px">${r.perm?'P'+r.perm:''}${r.color?'C'+r.color:''}</td>
         <td><button class="del-btn" onclick="delEntry('${r.date}')">削除</button></td>
       </tr>`;
     });
@@ -618,15 +623,24 @@ function renderSum(){
   gK.forEach((k,i)=>{if(!gT[i])return;const pct=mG&&i<5?Math.round(gT[i]/mG*100):0;gH+=`<div class="m"><div class="l">${gL[i]}</div><div class="v">${gT[i]}${i<5?'人':''}</div><div class="s">${i<5?pct+'%':''}</div></div>`;});
   document.getElementById('guest-sum').innerHTML=gH+'</div>';
 
-  const byD=Array.from({length:7},()=>({t:0,g:0,pm:0,cl:0,n:0}));
-  data.forEach(r=>{const i=di(r.date);byD[i].t+=r.total;byD[i].g+=r.guests;byD[i].pm+=r.perm||0;byD[i].cl+=r.color||0;byD[i].n++});
+  const byD=Array.from({length:7},()=>({t:0,c:0,l:0,g:0,pm:0,cl:0,n:0}));
+  data.forEach(r=>{const i=di(r.date);byD[i].t+=r.total;byD[i].c+=r.cash;byD[i].l+=r.cl;byD[i].g+=r.guests;byD[i].pm+=r.perm||0;byD[i].cl+=r.color||0;byD[i].n++});
   let dH='';
-  DAYS.forEach((d,i)=>{if(!byD[i].n)return;const up=byD[i].g?Math.round(byD[i].t/byD[i].g):0;dH+=`<tr><td><span class="db d${i}">${d}</span></td><td class="nr fw">¥${fmt(byD[i].t)}</td><td class="nc">${byD[i].g}</td><td class="nr">${up?'¥'+fmt(up):'-'}</td><td class="nc">${byD[i].pm||'-'}</td><td class="nc">${byD[i].cl||'-'}</td></tr>`;});
-  document.getElementById('day-sum').innerHTML=dH||'<tr><td colspan="6" class="empty">データなし</td></tr>';
+  DAYS.forEach((d,i)=>{
+    if(!byD[i].n)return;
+    const up=byD[i].g?Math.round(byD[i].t/byD[i].g):0;
+    dH+=`<tr><td><span class="db d${i}">${d}</span></td><td class="nr" style="color:#185fa5">¥${fmt(byD[i].c)}</td><td class="nr" style="color:#3b6d11">¥${fmt(byD[i].l)}</td><td class="nr fw">¥${fmt(byD[i].t)}</td><td class="nc">${byD[i].g}</td><td class="nr">${up?'¥'+fmt(up):'-'}</td><td class="nc" style="font-size:11px">${byD[i].pm?'P'+byD[i].pm:''}${byD[i].cl?'C'+byD[i].cl:''}</td></tr>`;
+  });
+  document.getElementById('day-sum').innerHTML=dH||'<tr><td colspan="7" class="empty">データなし</td></tr>';
 
-  const byW={};data.forEach(r=>{const w=wn(r.date);if(!byW[w])byW[w]={t:0,g:0,days:0};byW[w].t+=r.total;byW[w].g+=r.guests;byW[w].days++});
-  let wH='';Object.keys(byW).sort((a,b)=>+a-+b).forEach(w=>{const wk=byW[w];wH+=`<tr><td>第${w}週</td><td class="nr fw">¥${fmt(wk.t)}</td><td class="nc">${wk.g}</td><td class="nr">¥${fmt(wk.days?wk.t/wk.days:0)}</td></tr>`;});
-  document.getElementById('week-sum').innerHTML=wH||'<tr><td colspan="4" class="empty">データなし</td></tr>';
+  const byW={};
+  data.forEach(r=>{const w=wn(r.date);if(!byW[w])byW[w]={t:0,c:0,l:0,g:0,days:0};byW[w].t+=r.total;byW[w].c+=r.cash;byW[w].l+=r.cl;byW[w].g+=r.guests;byW[w].days++});
+  let wH='';
+  Object.keys(byW).sort((a,b)=>+a-+b).forEach(w=>{
+    const wk=byW[w];
+    wH+=`<tr><td>第${w}週</td><td class="nr" style="color:#185fa5">¥${fmt(wk.c)}</td><td class="nr" style="color:#3b6d11">¥${fmt(wk.l)}</td><td class="nr fw">¥${fmt(wk.t)}</td><td class="nc">${wk.g}人</td><td class="nr">¥${fmt(wk.days?wk.t/wk.days:0)}</td></tr>`;
+  });
+  document.getElementById('week-sum').innerHTML=wH||'<tr><td colspan="6" class="empty">データなし</td></tr>';
   renderChart(data,isAll);
 }
 
